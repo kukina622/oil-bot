@@ -1,44 +1,40 @@
 import requests
 from bs4 import BeautifulSoup
-import copy
-import re
-from decimal import Decimal
+from lxml import etree
 
-datePattern = '^[0-9]{4}/[0-9]{2}/[0-9]{2}|[0-9]{1}'
 url = r"https://www2.moeaboe.gov.tw/oil102/oil2017/A01/A0108/tablesprices.asp"
 
 
 def retailPriceCrawler():
   res = requests.get(url)
-  res.encoding = 'big5-hkscs'
   soup = BeautifulSoup(res.text, "html.parser")
-  infoAry = []
-  suppliers = []
-  infoDict = {
-      "supplier": "",
-      "gasoline_98": "",
-      "gasoline_95": "",
-      "gasoline_92": "",
-      "diesel_oil": "",
-      "sales_unit": "",
-      "date": ""
-  }
-  dataTable = soup.find_all("table")[1].find_all("tr")[1:4:]
-  for row in dataTable:
-    count = 0
-    for cell in row.find_all("td"):
-      if count == 6:  #對日期做處理
-        infoDict[list(infoDict.keys())[count]] = re.match(
-            datePattern, cell.text).group().replace("/", "-")  #濾出符合pattern的字段
-      elif count >= 1 and count <= 4:
-        infoDict[list(infoDict.keys())[count]] = Decimal(cell.text)
-      else:
-        infoDict[list(infoDict.keys())[count]] = cell.text
-      count += 1
+  infoList = []
+  dom = etree.HTML(str(soup))
 
-    # 不要把重複加入
-    if infoDict["supplier"] not in suppliers:
-      infoAry.append(copy.deepcopy(infoDict))
-      suppliers.append(infoDict["supplier"])
+  # 中油價格
+  supplier = "台灣中油"
+  gasoline_92 = dom.xpath('/html/body/main/section[1]/div/div/div[2]/div[2]/div/div/div[1]/ul/li[1]/div[2]/strong')[0].text
+  gasoline_95 = dom.xpath('/html/body/main/section[1]/div/div/div[2]/div[2]/div/div/div[1]/ul/li[2]/div[2]/strong')[0].text
+  gasoline_98 = dom.xpath('/html/body/main/section[1]/div/div/div[2]/div[2]/div/div/div[1]/ul/li[3]/div[2]/strong')[0].text
 
-  return infoAry
+  infoList.append({
+    "supplier":supplier,
+    "gasoline_92":gasoline_92,
+    "gasoline_95":gasoline_95,
+    "gasoline_98":gasoline_98
+  })
+
+  # 台塑價格
+  supplier = "台塑石化"
+  gasoline_92 = dom.xpath('/html/body/main/section[1]/div/div/div[2]/div[2]/div/div/div[2]/ul/li[1]/div[2]/strong')[0].text
+  gasoline_95 = dom.xpath('/html/body/main/section[1]/div/div/div[2]/div[2]/div/div/div[2]/ul/li[2]/div[2]/strong')[0].text
+  gasoline_98 = dom.xpath('/html/body/main/section[1]/div/div/div[2]/div[2]/div/div/div[2]/ul/li[3]/div[2]/strong')[0].text
+
+  infoList.append({
+    "supplier":supplier,
+    "gasoline_92":gasoline_92,
+    "gasoline_95":gasoline_95,
+    "gasoline_98":gasoline_98
+  })
+  
+  return infoList
