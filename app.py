@@ -8,7 +8,7 @@ from linebot.models import (MessageEvent, TextMessage, TextSendMessage,
 
 import configparser
 from copy import deepcopy
-
+import urllib.parse
 # db Model
 from oilModel import initConnection
 
@@ -105,8 +105,8 @@ def handleLocationMessage(event):
     flexMessageTemplate["body"]["contents"][1]["contents"][0]["contents"][0][
         "text"] = fullAddr
     # uri
-    flexMessageTemplate["footer"]["contents"][0]["action"][
-        "uri"] = f"https://www.google.com/maps?q={fullAddr}"
+    query = urllib.parse.quote(fullAddr.encode('utf8'))
+    flexMessageTemplate["footer"]["contents"][0]["action"]["uri"] = "https://www.google.com/maps?q=" + query
 
     FlexSendMessageList.append(
         FlexSendMessage(alt_text="附近的加油站",
