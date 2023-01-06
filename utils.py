@@ -24,3 +24,19 @@ def getDistance(latA, lonA, latB, lonB):
   distance = ra * (x + dr)
   distance = round(distance / 1000, 4)
   return distance
+
+def importer(db_settings):
+    import pymongo
+    user = db_settings["user"]
+    password = db_settings["password"]
+    host = db_settings["host"]
+
+    client = pymongo.MongoClient(f"mongodb+srv://{user}:{password}@{host}/?retryWrites=true&w=majority")
+    db = client["oilBot"]
+    json = None
+    with open("getStationInfo_XML.xml","r") as f:
+        import xmltodict
+        json = xmltodict.parse(f.read())["Dataset"]["Table"]
+
+    collection = db["Oilst"]
+    collection.insert_many(json)
